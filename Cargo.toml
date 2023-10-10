@@ -56,6 +56,8 @@ httpmock = "0.6"
 mockito = "1.2.0"
 pretty_assertions = "1.4.0"
 stripmargin = "0.1.1"
+assert_cmd = "2.0.12"
+predicates = "3.0.4"
 curl-sys = { version = "0.4", features = ["force-system-lib-on-osx"] }
 
 [profile.release]
