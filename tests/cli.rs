@@ -1,6 +1,7 @@
 use std::process::Command;
 
 use assert_cmd::prelude::*;
+use ntest::timeout;
 use predicates::prelude::*;
 
 #[test]
@@ -47,7 +48,7 @@ fn check_command_file_doesnt_exist() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn check_command_file_exists_but_is_invalid() -> Result<(), Box<dyn std::error::Error>> {
+fn check_command_file_exists_and_invalid() -> Result<(), Box<dyn std::error::Error>> {
   let mut cmd = Command::cargo_bin("tailcall")?;
 
   cmd
@@ -57,6 +58,19 @@ fn check_command_file_exists_but_is_invalid() -> Result<(), Box<dyn std::error::
     .assert()
     .failure()
     .stderr(predicate::str::contains("Error: Validation Error"));
+
+  Ok(())
+}
+
+#[test]
+fn check_command_file_exists_and_valid() -> Result<(), Box<dyn std::error::Error>> {
+  let mut cmd = Command::cargo_bin("tailcall")?;
+
+  cmd.arg("check").arg("tests/graphql/valid/jsonplaceholder.graphql");
+  cmd
+    .assert()
+    .success()
+    .stdout(predicate::str::contains("No errors found"));
 
   Ok(())
 }
@@ -133,6 +147,47 @@ fn start_command_log_level3() -> Result<(), Box<dyn std::error::Error>> {
   cmd.assert().failure().stderr(predicate::str::contains(
     "Usage: tailcall start --log-level <LOG_LEVEL> <FILE_PATH>",
   ));
+
+  Ok(())
+}
+
+#[test]
+fn start_command_file_exists_and_invalid() -> Result<(), Box<dyn std::error::Error>> {
+  let mut cmd = Command::cargo_bin("tailcall")?;
+
+  cmd
+    .arg("start")
+    .arg("tests/graphql/errors/test-const-with-inline.graphql");
+  cmd
+    .assert()
+    .failure()
+    .stderr(predicate::str::contains("Error: Invalid Configuration"));
+
+  Ok(())
+}
+
+#[test]
+#[timeout(2000)]
+// #[should_panic]
+fn start_command_file_exists_and_valid() -> Result<(), String> {
+  let mut cmd = match Command::cargo_bin("tailcall") {
+    Ok(cmd) => cmd,
+    Err(err) => return Err(format!("Failed to execute command: {}", err)),
+  };
+
+  let mut child = cmd
+    .arg("start")
+    .arg("tests/graphql/valid/jsonplaceholder.graphql")
+    .spawn()
+    .expect("Failed to spawn command");
+
+  cmd
+    .assert()
+    .failure()
+    .stderr(predicate::str::contains("Error: Server Failed"))
+    .stderr(predicate::str::contains("The port is already in use"));
+
+  child.kill().expect("Failed to kill command");
 
   Ok(())
 }
