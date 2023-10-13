@@ -66,7 +66,7 @@ fn check_command_file_exists_and_invalid() -> Result<(), Box<dyn std::error::Err
 fn check_command_file_exists_and_valid() -> Result<(), Box<dyn std::error::Error>> {
   let mut cmd = Command::cargo_bin("tailcall")?;
 
-  cmd.arg("check").arg("tests/graphql/valid/jsonplaceholder.graphql");
+  cmd.arg("check").arg("tests/graphql/valid/jsonplaceholder.graphql").arg("--n-plus-one-queries").arg("--schema");
   cmd
     .assert()
     .success()

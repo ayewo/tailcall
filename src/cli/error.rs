@@ -335,4 +335,12 @@ mod tests {
 
     assert_eq!(error.to_string(), expected);
   }
+
+  // extra tests
+  #[test]
+  fn test_colored() {
+      let error = CLIError::new("Test Error").color(true);
+      let colored_str = error.colored("Hello", colored::Color::Red);
+      assert!(colored_str.contains("\x1b[31mHello\x1b[0m"));
+  }
 }
