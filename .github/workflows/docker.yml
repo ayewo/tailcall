@@ -1,6 +1,6 @@
-name: Build and publish a Docker image to ghcr.io
+name: GHCR
 on:
-
+  workflow_dispatch:
   # publish on releases, e.g. v0.13 (image tagged as "0.13" - "v" prefix is removed)
   release:
     types: [ published ]
@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v2
 
       # https://github.com/marketplace/actions/push-to-ghcr
-      - name: Build and publish a Docker image for ${{ github.repository }}
+      - name: Build and Publish a Docker Image for ${{ github.repository }}
         uses: macbre/push-to-ghcr@master
         with:
           image_name: ${{ github.repository }}/tc-server  # it will be lowercased internally
