@@ -2,6 +2,8 @@ use std::process::Command;
 
 use assert_cmd::prelude::*;
 use predicates::prelude::*;
+use rexpect::spawn;
+use rexpect::error::*;
 
 #[cfg(test)]
 mod usage {
@@ -212,55 +214,75 @@ mod start {
 // Init command tests
 #[cfg(test)]
 mod init {
-  use super::*;
+use super::*;
+
   #[test]
   fn empty_args() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("tailcall")?;
+    let mut cmd = assert_cmd::Command::cargo_bin("tailcall")?;
 
     cmd.arg("init");
-    cmd.assert().failure().stderr(predicate::str::contains(
+    cmd.assert().failure().stderr(predicates::prelude::predicate::str::contains(
       "error: the following required arguments were not provided:",
     ));
     cmd
       .assert()
       .failure()
-      .stderr(predicate::str::contains("Usage: tailcall init <FILE_PATH>"));
+      .stderr(predicates::prelude::predicate::str::contains("Usage: tailcall init <FILE_PATH>"));
 
     Ok(())
   }
 
   #[test]
-  fn folder_nonexistent() -> Result<(), Box<dyn std::error::Error>> {
+//fn folder_nonexistent() -> Result<(), Box<dyn std::error::Error>> {
+  fn folder_nonexistent() -> Result<(), rexpect::error::Error> {
     let mut p = rexpect::spawn("cargo run -- init tmp0", Some(5000))?;
-    let mut res = p.exp_regex(r#".*Do you want to add a file to the project?.*"#)?;
+    let res = p.exp_regex(r#".*Do you want to add a file to the project\?.*"#)?;
     println!("Response: {:?}", res);
 
     let code = p.send("N\n")?; // you have to send the newline in test mode because it can't do the live readline checks that it can in a terminal
     println!("Response after sending 'N': {:?}", code);
-    res = p.exp_regex(".*No such file or directory.*")?;
+    p.exp_regex(".*No such file or directory.*")?;
     println!("Response after res: {:?}", res);
 
     Ok(())
   }
-
+  
   #[test]
-  fn folder_nonexistent2() -> Result<(), Box<dyn std::error::Error>> {
-    let mut p = rexpect::spawn("cargo run -- init tmp0", Some(5000))?;
-    let mut res = p.exp_regex(r#".*Do you want to add a file to the project?.*"#)?;
-    println!("Response: {:?}", res);
-
-    let code = p.send("y\n")?; // you have to send the newline in test mode because it can't do the live readline checks that it can in a terminal
-    println!("Response code after sending 'y': {:?}", code);
-    res = p.exp_regex(".*Enter the file name:*")?;
-    // code = p.send("n\n")?;
-    println!("Response after last interaction: {:?}\n", res);
-    res = p.exp_regex(".*Do you want to create the file .graphql?*")?;
-    println!("Response after last interaction: {:?}\n", res);
-    res = p.exp_regex(".*No such file or directory*")?;
-    println!("Response after last interaction: {:?}\n", res);
-
+  fn test_my_cmd() -> Result<(), rexpect::error::Error> {
+    println!("Starting...");
+    let mut p = rexpect::spawn("cargo run", Some(5000))?;
+    let res = p.exp_regex(r#".*Are you sure\?.*"#)?;
+    println!("Res after are you sure: {:?}", res);
+    // you'll get this because it's doing the build and start:
+    // ```
+    // ("\u{1b}[0m\u{1b}[0m\u{1b}[1m\u{1b}[32m   Compiling\u{1b}[0m test-rs-expect v0.1.0 (/Users/yaleman/Projects/test-rs-expect)\r\n\u{1b}[0m\u{1b}[0m\u{1b}[1m\u{1b}[32m    Finished\u{1b}[0m dev [unoptimized + debuginfo] target(s) in 0.10s\r\n\u{1b}[0m\u{1b}[0m\u{1b}[1m\u{1b}[32m     Running\u{1b}[0m `target/debug/test-rs-expect`\r\nHello, world!\r\n", "Are you sure? [y/n] \u{1b}[?25l")
+    // ```
+    let res = p.send("y\n")?; // you have to send the newline in test mode because it can't do the live readline checks that it can in a terminal
+    println!("Res after sending y: {:?}", res);
+    p.exp_regex(".*Result: Ok\\(true\\).*")?;
+    println!("Res after res: {:?}", res);
+    
     Ok(())
   }
+
+  // #[test]
+  // fn folder_nonexistent2() -> Result<(), Box<dyn std::error::Error>> {
+  //   let mut p = rexpect::spawn("cargo run -- init tmp0", Some(5000))?;
+  //   let mut res = p.exp_regex(r#".*Do you want to add a file to the project?.*"#)?;
+  //   println!("Response: {:?}", res);
+
+  //   let code = p.send("y\n")?; // you have to send the newline in test mode because it can't do the live readline checks that it can in a terminal
+  //   println!("Response code after sending 'y': {:?}", code);
+  //   res = p.exp_regex(".*Enter the file name:*")?;
+  //   // code = p.send("n\n")?;
+  //   println!("Response after last interaction: {:?}\n", res);
+  //   res = p.exp_regex(".*Do you want to create the file .graphql?*")?;
+  //   println!("Response after last interaction: {:?}\n", res);
+  //   res = p.exp_regex(".*No such file or directory*")?;
+  //   println!("Response after last interaction: {:?}\n", res);
+
+  //   Ok(())
+  // }
 
   // #[test]
   // fn folder_exists() -> Result<(), Box<dyn std::error::Error>> {
